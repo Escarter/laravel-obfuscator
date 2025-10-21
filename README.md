@@ -20,6 +20,8 @@ A powerful Laravel package for code obfuscation with encryption and variable nam
 composer require escarter/laravel-obfuscator --dev
 ```
 
+> **Note**: This package is now available as a stable v1.0.0 release on Packagist!
+
 ### Manual Installation (Local Package)
 
 1. Create a `packages` directory in your Laravel project root:
