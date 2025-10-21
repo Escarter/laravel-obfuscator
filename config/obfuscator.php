@@ -185,6 +185,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Debug Disabling
+    |--------------------------------------------------------------------------
+    |
+    | Configure debug disabling features to prevent debugging of obfuscated code
+    |
+    */
+    'debug_disabling' => [
+        'enabled' => true,
+        'disable_error_reporting' => true,
+        'disable_xdebug' => true,
+        'disable_debug_backtrace' => true,
+        'disable_var_dump' => true,
+        'disable_print_r' => true,
+        'disable_die_exit' => true,
+        'inject_anti_debug_code' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Output Settings
     |--------------------------------------------------------------------------
     |

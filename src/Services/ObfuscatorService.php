@@ -192,7 +192,76 @@ class ObfuscatorService
         
         $encoded = base64_encode($encrypted);
         
-        return "<?php \$_k=\"{$this->encryptionKey}\";\$_d=base64_decode('{$encoded}');\$_r='';for(\$_i=0;\$_i<strlen(\$_d);\$_i++)\$_r.=chr(ord(\$_d[\$_i])^ord(\$_k[\$_i%strlen(\$_k)]));eval(\$_r);";
+        $wrapper = "<?php \$_k=\"{$this->encryptionKey}\";\$_d=base64_decode('{$encoded}');\$_r='';for(\$_i=0;\$_i<strlen(\$_d);\$_i++)\$_r.=chr(ord(\$_d[\$_i])^ord(\$_k[\$_i%strlen(\$_k)]));eval(\$_r);";
+        
+        // Add debug disabling code if enabled
+        if ($this->config['debug_disabling']['enabled']) {
+            $wrapper = $this->injectDebugDisablingCode($wrapper);
+        }
+        
+        return $wrapper;
+    }
+
+    /**
+     * Inject debug disabling code into the obfuscated wrapper
+     */
+    protected function injectDebugDisablingCode(string $wrapper): string
+    {
+        $debugCode = '';
+        
+        if ($this->config['debug_disabling']['disable_error_reporting']) {
+            $debugCode .= "error_reporting(0);ini_set('display_errors',0);ini_set('log_errors',0);";
+        }
+        
+        if ($this->config['debug_disabling']['disable_xdebug']) {
+            $debugCode .= "if(function_exists('xdebug_disable')){xdebug_disable();}";
+        }
+        
+        if ($this->config['debug_disabling']['disable_debug_backtrace']) {
+            $debugCode .= "if(function_exists('debug_backtrace')){ini_set('debug_backtrace',0);}";
+        }
+        
+        if ($this->config['debug_disabling']['disable_var_dump']) {
+            $debugCode .= "if(function_exists('var_dump')){function var_dump(){return null;}}";
+        }
+        
+        if ($this->config['debug_disabling']['disable_print_r']) {
+            $debugCode .= "if(function_exists('print_r')){function print_r(){return null;}}";
+        }
+        
+        if ($this->config['debug_disabling']['disable_die_exit']) {
+            $debugCode .= "if(function_exists('die')){function die(){return null;}}";
+        }
+        
+        if ($this->config['debug_disabling']['inject_anti_debug_code']) {
+            $debugCode .= $this->generateAntiDebugCode();
+        }
+        
+        // Inject debug disabling code at the beginning of the wrapper
+        return str_replace('<?php ', '<?php ' . $debugCode, $wrapper);
+    }
+
+    /**
+     * Generate anti-debug code to detect debugging attempts
+     */
+    protected function generateAntiDebugCode(): string
+    {
+        return "
+        \$_debug_detected=false;
+        if(isset(\$_SERVER['HTTP_X_FORWARDED_FOR'])||isset(\$_SERVER['HTTP_X_REAL_IP'])||isset(\$_SERVER['HTTP_CLIENT_IP'])){
+            \$_debug_detected=true;
+        }
+        if(function_exists('get_included_files')&&count(get_included_files())>50){
+            \$_debug_detected=true;
+        }
+        if(isset(\$_SERVER['REQUEST_TIME_FLOAT'])&&microtime(true)-\$_SERVER['REQUEST_TIME_FLOAT']>30){
+            \$_debug_detected=true;
+        }
+        if(\$_debug_detected){
+            http_response_code(404);
+            exit;
+        }
+        ";
     }
 
     /**

@@ -13,7 +13,8 @@ class ObfuscateCommand extends Command
     protected $signature = 'obfuscate:run 
                             {--dry-run : Run without making changes}
                             {--no-backup : Skip backup creation}
-                            {--no-views : Skip Blade view cleaning}';
+                            {--no-views : Skip Blade view cleaning}
+                            {--no-debug-disable : Skip debug disabling features}';
 
     /**
      * The console command description.
@@ -47,6 +48,10 @@ class ObfuscateCommand extends Command
         
         if ($this->option('no-views')) {
             $config['clean_blade_views'] = false;
+        }
+        
+        if ($this->option('no-debug-disable')) {
+            $config['debug_disabling']['enabled'] = false;
         }
 
         // Create obfuscator service
@@ -83,16 +88,19 @@ class ObfuscateCommand extends Command
             $this->newLine();
 
             // Display statistics
-            $this->table(
-                ['Metric', 'Value'],
-                [
-                    ['PHP Files Obfuscated', $stats['files_processed']],
-                    ['Files Skipped', $stats['files_skipped']],
-                    ['Blade Views Cleaned', $stats['views_cleaned']],
-                    ['Variables Obfuscated', $stats['variables_obfuscated']],
-                    ['Duration', "{$duration}s"],
-                ]
-            );
+            $statsTable = [
+                ['PHP Files Obfuscated', $stats['files_processed']],
+                ['Files Skipped', $stats['files_skipped']],
+                ['Blade Views Cleaned', $stats['views_cleaned']],
+                ['Variables Obfuscated', $stats['variables_obfuscated']],
+                ['Duration', "{$duration}s"],
+            ];
+            
+            if ($config['debug_disabling']['enabled']) {
+                $statsTable[] = ['Debug Disabling', '✅ Enabled'];
+            }
+            
+            $this->table(['Metric', 'Value'], $statsTable);
 
             $this->newLine();
 

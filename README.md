@@ -8,6 +8,7 @@ A powerful Laravel package for code obfuscation with encryption and variable nam
 - 🌐 **Unicode Obfuscation** - Variable and method names replaced with Unicode lookalikes
 - 🧹 **Blade View Cleaning** - Remove comments from Blade templates
 - 📦 **Automatic Backups** - Create timestamped backups before obfuscation
+- 🛡️ **Debug Disabling** - Prevent debugging attempts and hide error information
 - ⚙️ **Highly Configurable** - Customize paths, exclusions, and protection levels
 - 🎯 **Laravel Optimized** - Preserves Laravel/Livewire functionality
 - 🚀 **Artisan Command** - Simple CLI interface
@@ -68,6 +69,7 @@ This creates `config/obfuscator.php` where you can customize:
 - **Excluded files** (preserve critical Laravel files)
 - **Backup settings**
 - **Encryption method**
+- **Debug disabling features** (prevent debugging attempts)
 - **Protected variable/method/property names**
 - **Output verbosity**
 
@@ -137,6 +139,14 @@ Obfuscate only PHP files, leave Blade views untouched:
 php artisan obfuscate:run --no-views
 ```
 
+### Skip Debug Disabling
+
+Disable debug prevention features (not recommended for production):
+
+```bash
+php artisan obfuscate:run --no-debug-disable
+```
+
 ## How It Works
 
 ### 1. Code Parsing
@@ -156,6 +166,45 @@ Encrypted code is wrapped in a self-executing eval() statement:
 
 ```php
 <?php $_k="encryption_key";$_d=base64_decode('...');$_r='';for($_i=0;$_i<strlen($_d);$_i++)$_r.=chr(ord($_d[$_i])^ord($_k[$_i%strlen($_k)]));eval($_r);
+```
+
+## Debug Disabling Features
+
+The package includes advanced debug disabling features to prevent reverse engineering:
+
+### Error Reporting Disabled
+- `error_reporting(0)` - Disables all error reporting
+- `ini_set('display_errors', 0)` - Hides error output
+- `ini_set('log_errors', 0)` - Prevents error logging
+
+### Debug Function Overrides
+- `var_dump()` - Neutralized to prevent variable inspection
+- `print_r()` - Disabled to prevent data dumping
+- `die()` - Neutralized to prevent script termination debugging
+
+### XDebug Protection
+- Automatically disables XDebug if present
+- Prevents debug_backtrace() functionality
+
+### Anti-Debug Detection
+- Detects proxy headers (X-Forwarded-For, X-Real-IP, etc.)
+- Monitors included file count (debugging tools load many files)
+- Detects long execution times (debugging sessions)
+- Returns 404 response when debugging is detected
+
+### Configuration Options
+
+```php
+'debug_disabling' => [
+    'enabled' => true,
+    'disable_error_reporting' => true,
+    'disable_xdebug' => true,
+    'disable_debug_backtrace' => true,
+    'disable_var_dump' => true,
+    'disable_print_r' => true,
+    'disable_die_exit' => true,
+    'inject_anti_debug_code' => true,
+],
 ```
 
 ## Protected Elements
@@ -309,6 +358,7 @@ The authors are not responsible for any data loss or application failures result
 - Unicode variable name obfuscation
 - Blade view comment removal
 - Automatic backup creation
+- Debug disabling features (error reporting, XDebug, anti-debug detection)
 - Configurable exclusions and protections
 - Artisan command interface
 - Dry-run mode
